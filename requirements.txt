@@ -6,3 +6,4 @@ langchain_chroma
 python-dotenv
 pypdf
 tiktoken
+chromadb==0.4.22
