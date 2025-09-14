@@ -1,42 +1,33 @@
-# pip3 install langchain langchain_community langchain_openai langchain_chroma 
-
-# pip3 install langchain langchain_community langchain_openai langchain_chroma 
+# pip3 install langchain langchain_community langchain_openai chromadb
 
 import os
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from dotenv import load_dotenv
-from langchain_chroma import Chroma
-from langchain.prompts import ChatPromptTemplate
 import streamlit as st
 
-# load all the keys from .env file (local dev)
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+from langchain.vectorstores import Chroma
+from langchain.prompts import ChatPromptTemplate
+
+# --- Load API key ---
+# load from .env for local development
 load_dotenv()
 
-# get API key (works both locally and on Streamlit Cloud secrets)
+# get from Streamlit Secrets first, fallback to .env
 OPENAI_API_KEY = st.secrets.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
+if not OPENAI_API_KEY:
+    raise RuntimeError("OPENAI_API_KEY not set. Add it in Streamlit Cloud -> Manage app -> Secrets.")
 
-# create embeddings / creates embeddings for text
+# --- Create embeddings ---
 embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
 
-# suman: loads (or creates) a persistent vector DB stored under ./knowledge_base.
-# load vector_store
+# --- Vector store (Chroma) ---
 vector_store = Chroma(
     collection_name="my_collection",
     persist_directory="./knowledge_base",
-    embedding_function=embeddings
+    embedding_function=embeddings.embed_query  # pass embedding function callable
 )
 
-# create a prompt template
-# template = """
-# You are a helpful assistant answering all the user questions.
-# Answer the user questions based on the context provided.
-# If you do not know the answer, please use your existing knowledge. 
-# Do not fabricate the answer at any cost.
-
-# Question: {question}
-# Context: {context}
-# """
-
+# --- Prompt template ---
 template = """
 You are a helpful assistant answering all the user questions.
 Answer the user questions based on the context provided.
@@ -47,33 +38,34 @@ Question: {question}
 Context: {context}
 """
 
-# create llm
-#llm = ChatOpenAI(model="gpt-5")
-llm = ChatOpenAI(model="gpt-5-nano")
+# --- LLM ---
+# Replace with a model you have access to
+llm = ChatOpenAI(model="gpt-5-nano", openai_api_key=OPENAI_API_KEY)
 
-# set the streamlit UI
+# --- Streamlit UI ---
 st.header("Chat with PDF")
 
-# get the question from user
-question = st.chat_input("enter your question> ")
+# Input from user
+question = st.chat_input("Enter your question> ")
 
-# check if question is asked by user
 if question:
-    # suman: vector_store.search(question, ...) returns nearest documents from that DB; those are fed into the prompt template and the model answers
-    # find the similar documents from vector_store
-    context = vector_store.search(
-        question, search_type="similarity", k=5
-    )
+    # search relevant docs
+    try:
+        docs = vector_store.similarity_search(question, k=5)
+        context = "\n\n".join([d.page_content for d in docs]) if docs else "No relevant context found."
+    except Exception as e:
+        context = f"Vector store error: {e}"
 
-    # create the prompt template
+    # build prompt
     prompt_template = ChatPromptTemplate.from_template(template=template)
-
-    # set the variables and create the prompt
     prompt = prompt_template.invoke({
         "question": question,
         "context": context
     })
 
-    # send the prompt and get the result
-    result = llm.invoke(prompt)
-    st.text(result.content)
+    # LLM answer
+    try:
+        result = llm.invoke(prompt)
+        st.text(result.content)
+    except Exception as e:
+        st.error(f"LLM error: {e}")
