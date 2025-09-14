@@ -1,6 +1,10 @@
 # pip3 install langchain langchain_community langchain_openai langchain_chroma 
 
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+#from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+# With this (recommended):
+from langchain.chat_models import ChatOpenAI
+from langchain.embeddings.openai import OpenAIEmbeddings
+
 from dotenv import load_dotenv
 from langchain_chroma import Chroma
 from langchain.prompts import ChatPromptTemplate
