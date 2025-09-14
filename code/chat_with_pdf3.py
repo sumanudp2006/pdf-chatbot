@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 
 #from langchain_chroma import Chroma
 from langchain.vectorstores import Chroma
+from langchain.vectorstores import FAISS
 
 from langchain.prompts import ChatPromptTemplate
 import streamlit as st
