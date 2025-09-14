@@ -7,3 +7,5 @@ python-dotenv
 pypdf
 tiktoken
 chromadb==0.4.22
+faiss-cpu
+
