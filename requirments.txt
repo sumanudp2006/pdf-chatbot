@@ -6,4 +6,3 @@ langchain_chroma
 python-dotenv
 pypdf
 tiktoken
-faiss-cpu
