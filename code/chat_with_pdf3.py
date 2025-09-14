@@ -1,20 +1,22 @@
 # pip3 install langchain langchain_community langchain_openai langchain_chroma 
 
+# pip3 install langchain langchain_community langchain_openai langchain_chroma 
+
+import os
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from dotenv import load_dotenv
-
-#from langchain_chroma import Chroma
-from langchain.vectorstores import Chroma
-from langchain.vectorstores import FAISS
-
+from langchain_chroma import Chroma
 from langchain.prompts import ChatPromptTemplate
 import streamlit as st
 
-# load all the keys from .env file
+# load all the keys from .env file (local dev)
 load_dotenv()
 
-# create embeddings  / creates embeddings for text.
-embeddings = OpenAIEmbeddings()
+# get API key (works both locally and on Streamlit Cloud secrets)
+OPENAI_API_KEY = st.secrets.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
+
+# create embeddings / creates embeddings for text
+embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
 
 # suman: loads (or creates) a persistent vector DB stored under ./knowledge_base.
 # load vector_store
